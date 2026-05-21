@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel de Testes - NearSport DB</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f4f6f9; color: #333; margin: 0; padding: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        h1 { color: #2c3e50; text-align: center; }
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        .form-group { margin-bottom: 15px; display: flex; flex-direction: column; }
+        label { font-weight: bold; margin-bottom: 5px; color: #555; }
+        input, select { padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
+        button { background: #007bff; color: white; border: none; padding: 12px; border-radius: 4px; cursor: pointer; font-size: 16px; font-weight: bold; }
+        button:hover { background: #0056b3; }
+        .atleta-item { background: #fff; padding: 15px; border-left: 5px solid #28a745; margin-bottom: 10px; border-radius: 0 4px 4px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+        .atleta-item p { margin: 4px 0; }
+        .badge { background: #e9ecef; padding: 3px 8px; border-radius: 12px; font-size: 12px; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Dashboard de Testes do MongoDB</h1>
+    
+    <!-- Formulário de Cadastro -->
+    <div class="card">
+        <h2>Cadastrar Novo Atleta</h2>
+        <form id="atletaForm">
+            <div class="form-group">
+                <label>Nome:</label>
+                <input type="text" id="nome" required placeholder="Ex: Matheus">
+            </div>
+            <div class="form-group">
+                <label>Email:</label>
+                <input type="email" id="email" required placeholder="Ex: teste@email.com">
+            </div>
+            <div class="form-group">
+                <label>Esporte Principal:</label>
+                <select id="esportePrincipal" required>
+                    <option value="Futebol">Futebol</option>
+                    <option value="Basquete">Basquete</option>
+                    <option value="Vôlei">Vôlei</option>
+                    <option value="Outros">Outros</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Idade:</label>
+                <input type="number" id="idade" required min="10" max="100">
+            </div>
+            <button type="submit">Salvar no MongoDB</button>
+        </form>
+    </div>
+
+    <!-- Lista de Registros -->
+    <div class="card">
+        <h2>Atletas no Banco de Dados</h2>
+        <div id="listaAtletas">Carregando dados...</div>
+    </div>
+</div>
+
+<script>
+    const form = document.getElementById('atletaForm');
+    const lista = document.getElementById('listaAtletas');
+
+    // Função para buscar dados da API e renderizar na tela
+    async function carregarAtletas() {
+        try {
+            const res = await fetch('/api/atletas');
+            const atletas = await res.json();
+            
+            if(atletas.length === 0) {
+                lista.innerHTML = '<p style="color: #777;">Nenhum atleta cadastrado ainda.</p>';
+                return;
+            }
+
+            lista.innerHTML = atletas.map(atleta => `
+                <div class="atleta-item">
+                    <p><strong>Nome:</strong> ${atleta.nome}</p>
+                    <p><strong>Email:</strong> ${atleta.email}</p>
+                    <p><strong>Idade:</strong> ${atleta.idade} anos</p>
+                    <p><span class="badge">${atleta.esportePrincipal}</span></p>
+                </div>
+            `).join('');
+        } catch (error) {
+            lista.innerHTML = '<p style="color: red;">Erro ao carregar dados do banco.</p>';
+        }
+    }
+
+    // Evento de Envio do Formulário
+form.addEventListener('submit', async (e) => {
+    e.preventDefault(); // Isso impede a página de recarregar e quebrar a requisição
+    
+    const dados = {
+        nome: document.getElementById('nome').value,
+        email: document.getElementById('email').value,
+        esportePrincipal: document.getElementById('esportePrincipal').value,
+        idade: document.getElementById('idade').value
+    };
+
+    try {
+        const res = await fetch('/api/atletas', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(dados)
+        });
+
+        const resultado = await res.json();
+
+        if (res.ok) {
+            alert('🎉 Enviado com sucesso para o Atlas!');
+            form.reset();
+            carregarAtletas(); // Atualiza a lista na tela
+        } else {
+            alert(`❌ Erro de Validação: ${resultado.erro}`);
+        }
+    } catch (error) {
+        alert('Erro ao conectar com a API.');
+    }
+}); // Fechamento correto do addEventListener
+
+    // Inicializa a listagem ao abrir a página
+    carregarAtletas();
+</script>
+
+</body>
+</html>
