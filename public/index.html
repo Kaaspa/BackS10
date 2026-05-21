@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel de Testes - MongoDB Serverless</title>
+    <title>Painel de Testes - NearSport DB</title>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f4f6f9; color: #333; margin: 0; padding: 20px; }
         .container { max-width: 800px; margin: 0 auto; }
@@ -22,8 +22,9 @@
 <body>
 
 <div class="container">
-    <h1>Dashboard de Testes do MongoDB (Direto no Front)</h1>
+    <h1>Dashboard de Testes do MongoDB</h1>
     
+    <!-- Formulário de Cadastro -->
     <div class="card">
         <h2>Cadastrar Novo Atleta</h2>
         <form id="atletaForm">
@@ -52,6 +53,7 @@
         </form>
     </div>
 
+    <!-- Lista de Registros -->
     <div class="card">
         <h2>Atletas no Banco de Dados</h2>
         <div id="listaAtletas">Carregando dados...</div>
@@ -59,39 +61,14 @@
 </div>
 
 <script>
-    // ================= CONFIGURAÇÃO DO ATALAS =================
-    const API_KEY = 'COLE_AQUI_SUA_API_KEY_DO_ATLAS';
-    const BASE_URL = 'COLE_AQUI_A_URL_BASE_DA_DATA_API'; // Termina com /action
-    const CLUSTER_NAME = 'Cluster0'; // Nome padrão do cluster gratuito do Atlas
-    const DATABASE_NAME = 'MeuBancoDeDados'; 
-    const COLLECTION_NAME = 'atletas';
-    // ==========================================================
-
     const form = document.getElementById('atletaForm');
     const lista = document.getElementById('listaAtletas');
 
-    const headers = {
-        'Content-Type': 'application/json',
-        'api-key': al-u-Iq44fUISrJP21IdLx3xc_uSliIo74KE7_CUH2s9fj
-    };
-
-    const payloadBase = {
-        dataSource: CLUSTER_NAME,
-        database: DATABASE_NAME,
-        collection: COLLECTION_NAME
-    };
-
-    // Função para buscar dados do Atlas
+    // Função para buscar dados da API e renderizar na tela
     async function carregarAtletas() {
         try {
-            const res = await fetch(`${BASE_URL}/find`, {
-                method: 'POST', // A Data API do Atlas usa POST para todas as operações de busca
-                headers: headers,
-                body: JSON.stringify({ ...payloadBase, limit: 50 })
-            });
-            
-            const data = await res.json();
-            const atletas = data.documents || [];
+            const res = await fetch('/api/atletas');
+            const atletas = await res.json();
             
             if(atletas.length === 0) {
                 lista.innerHTML = '<p style="color: #777;">Nenhum atleta cadastrado ainda.</p>';
@@ -112,38 +89,38 @@
     }
 
     // Evento de Envio do Formulário
-    form.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        
-        const novoAtleta = {
-            nome: document.getElementById('nome').value,
-            email: document.getElementById('email').value,
-            esportePrincipal: document.getElementById('esportePrincipal').value,
-            idade: parseInt(document.getElementById('idade').value)
-        };
+form.addEventListener('submit', async (e) => {
+    e.preventDefault(); // Isso impede a página de recarregar e quebrar a requisição
+    
+    const dados = {
+        nome: document.getElementById('nome').value,
+        email: document.getElementById('email').value,
+        esportePrincipal: document.getElementById('esportePrincipal').value,
+        idade: document.getElementById('idade').value
+    };
 
-        try {
-            const res = await fetch(`${BASE_URL}/insertOne`, {
-                method: 'POST',
-                headers: headers,
-                body: JSON.stringify({
-                    ...payloadBase,
-                    document: novoAtleta
-                })
-            });
+    try {
+        const res = await fetch('/api/atletas', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(dados)
+        });
 
-            if (res.ok) {
-                alert('🎉 Enviado com sucesso direto para o Atlas!');
-                form.reset();
-                carregarAtletas();
-            } else {
-                alert('❌ Erro ao salvar no banco.');
-            }
-        } catch (error) {
-            alert('Erro de conexão com o banco.');
+        const resultado = await res.json();
+
+        if (res.ok) {
+            alert('🎉 Enviado com sucesso para o Atlas!');
+            form.reset();
+            carregarAtletas(); // Atualiza a lista na tela
+        } else {
+            alert(`❌ Erro de Validação: ${resultado.erro}`);
         }
-    });
+    } catch (error) {
+        alert('Erro ao conectar com a API.');
+    }
+}); // Fechamento correto do addEventListener
 
+    // Inicializa a listagem ao abrir a página
     carregarAtletas();
 </script>
 
